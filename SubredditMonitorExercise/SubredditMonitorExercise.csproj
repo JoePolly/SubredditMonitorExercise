@@ -11,4 +11,19 @@
       <PackageReference Include="RestSharp" Version="110.2.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="config.example.json" />
+      <Content Include="config.example.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="config.json" />
+      <Content Include="config.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SubredditMonitorExercise.Types\SubredditMonitorExercise.Types.csproj" />
+    </ItemGroup>
+
 </Project>
