@@ -25,6 +25,10 @@ public sealed class StatisticsWriter : BackgroundService
             // Get file write handle
             var file = new FileInfo(_filename);
             await using var stream = file.Open(FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read);
+            
+            //Truncate file
+            stream.SetLength(0);
+            
             await using var writer = new StreamWriter(stream);
 
             var postCountsByUser = _postStore.GetPostCountsByUser();
@@ -34,27 +38,35 @@ public sealed class StatisticsWriter : BackgroundService
                 // No posts have been saved yet.
                 
                 await Task.Delay(_writeInterval, stoppingToken);
-                continue;
+                await JsonSerializer.SerializeAsync(writer.BaseStream, new
+                    {
+                        TotalPosts = 0,
+                    },
+                    new JsonSerializerOptions { WriteIndented = true }, stoppingToken);
+            }
+            else
+            {
+                var userWithMostPosts = postCountsByUser.MaxBy(pair => pair.Value).Key;
+                var totalPosts = postCountsByUser.Sum(pair => pair.Value);
+                var averagePostsPerUser = totalPosts / postCountsByUser.Count;
+
+                var mostUpvotedPost = _postStore.GetTopPosts(1).SingleOrDefault();
+
+                await JsonSerializer.SerializeAsync(writer.BaseStream, new
+                    {
+                        UserWithMostPosts = new
+                        {
+                            UserName = userWithMostPosts,
+                            PostCount = postCountsByUser[userWithMostPosts]
+                        },
+                        AveragePostsPerUser = averagePostsPerUser,
+                        TotalPosts = totalPosts,
+                        MostUpvotedPost = mostUpvotedPost
+                    },
+                    new JsonSerializerOptions { WriteIndented = true }, stoppingToken);
             }
 
-            var userWithMostPosts = postCountsByUser.MaxBy(pair => pair.Value).Key;
-            var totalPosts = postCountsByUser.Sum(pair => pair.Value);
-            var averagePostsPerUser = totalPosts / postCountsByUser.Count;
-
-            var mostUpvotedPost = _postStore.GetTopPosts(1).SingleOrDefault();
-
-            await JsonSerializer.SerializeAsync(writer.BaseStream, new
-                {
-                    UserWithMostPosts = new {
-                        UserName = userWithMostPosts,
-                        PostCount = postCountsByUser[userWithMostPosts] 
-                    },
-                    AveragePostsPerUser = averagePostsPerUser,
-                    TotalPosts = totalPosts,
-                    MostUpvotedPost = mostUpvotedPost
-                },
-                new JsonSerializerOptions { WriteIndented = true }, stoppingToken);
-
+            await writer.FlushAsync();
             await Task.Delay(_writeInterval, stoppingToken);
         }
     }
