@@ -31,7 +31,7 @@ appBuilder.Services.AddSingleton<IPostStore, PostMemoryStore>();
 appBuilder.Services.AddHostedService<ApiScheduler>();
 appBuilder.Services.AddHostedService<PostConsumer>();
 
-if (appBuilder.Configuration.GetValue<bool>("StatisticsWriter:Enabled", true))
+if (appBuilder.Configuration.GetValue("StatisticsWriter:Enabled", true))
 {
     appBuilder.Services.AddHostedService<StatisticsWriter>();
 }
@@ -44,8 +44,7 @@ LogManager.Setup().LoadConfiguration(builder =>
         builder.ForLogger().FilterMinLevel(consoleLogLevel).WriteToConsole();
     }
 
-    builder.ForLogger().FilterMinLevel(LogLevel.Debug).WriteToFile("${basedir}/logs/${shortdate}.log",
-        maxArchiveFiles: 4, archiveAboveSize: 10_000);
+    builder.ForLogger().FilterMinLevel(LogLevel.Debug).WriteToFile("${basedir}/logs/${date:format=yyyy-MM-dd-HH}.log");
 });
 TimeSource.Current = new AccurateUtcTimeSource();
 
@@ -56,6 +55,4 @@ appBuilder.Logging.AddNLog();
 using var host = appBuilder.Build();
 
 using CancellationTokenSource cancellationTokenSource = new();
-cancellationTokenSource.CancelAfter(TimeSpan.FromMinutes(10));
-
 await host.RunAsync(cancellationTokenSource.Token);
