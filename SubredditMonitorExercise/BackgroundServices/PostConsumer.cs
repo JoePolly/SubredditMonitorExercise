@@ -36,11 +36,14 @@ public sealed class PostConsumer : BackgroundService
 
     private void ProcessPost(ISocialMediaPost post)
     {
-        _logger.LogInformation("Consumed post {PostId}", post.Id);
+        _logger.LogTrace("Consumed post {PostId}", post.Id);
 
         if (_postStore.Exists(post.Id))
+        {
             // We just need to update the score.
             _postStore.SetPostScore(post.Id, post.Score);
+            return;
+        }
 
         // If you want to do any processing on the post before storing it, you can do it here
         // For example, if you wanted to use an external service to analyze the post content.

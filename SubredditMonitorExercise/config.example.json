@@ -3,6 +3,7 @@
   "Reddit": {
     "ClientId": "YOUR_CLIENT_ID",
     "ClientSecret": "YOUR_CLIENT_SECRET",
+    "PostsPerSpecificRequest": 100,
     "Subreddits": [
       "funny",
       "ProgrammerHumor",
@@ -10,10 +11,8 @@
     ]
   },
   "ApiScheduler": {
-    "MinimumIntervalMs": 500
-  },
-  "PostFeed": {
-    "WarningThreshold": 10
+    "MinimumIntervalMs": 500,
+    "FeedWarningThreshold": 100
   },
   "StatisticsWriter": {
     "Enabled": true,
