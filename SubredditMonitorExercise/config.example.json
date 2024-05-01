@@ -1,5 +1,28 @@
 ﻿{
-  "subreddit": "ProgrammerHumor",
-  "clientId": "YOUR_CLIENT_ID",
-  "clientSecret": "YOUR_CLIENT_SECRET"
+  "LookbackPeriod": 0,
+  "Reddit": {
+    "ClientId": "YOUR_CLIENT_ID",
+    "ClientSecret": "YOUR_CLIENT_SECRET",
+    "Subreddits": [
+      "funny",
+      "ProgrammerHumor",
+      "pics"
+    ]
+  },
+  "ApiScheduler": {
+    "MinimumIntervalMs": 500
+  },
+  "PostFeed": {
+    "WarningThreshold": 10
+  },
+  "StatisticsWriter": {
+    "Filename": "statistics.json",
+    "IntervalMs": 5000
+  },
+  "Logging": {
+    "Console": {
+      "Enabled": true,
+      "LogLevel": "Info"
+    }
+  }
 }
