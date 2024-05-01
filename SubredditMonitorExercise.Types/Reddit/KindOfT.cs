@@ -14,6 +14,9 @@ public class Kind<T>
     [JsonPropertyName("data")]
     [JsonRequired]
     public required T Data { get; set; }
-    
-    public static implicit operator T (Kind<T> kind) => kind.Data;
+
+    public static implicit operator T(Kind<T> kind)
+    {
+        return kind.Data;
+    }
 }

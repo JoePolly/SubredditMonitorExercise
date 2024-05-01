@@ -15,7 +15,7 @@ namespace SubredditMonitorExercise.Types.Reddit;
 public class ListingData<T>
 {
     [JsonPropertyName("after")] public string? After { get; set; }
-    
+
     [JsonPropertyName("before")] public string? Before { get; set; }
     [JsonPropertyName("children")] public required List<Kind<T>> Children { get; set; } = new();
 }
