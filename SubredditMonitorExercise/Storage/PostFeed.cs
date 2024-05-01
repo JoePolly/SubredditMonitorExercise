@@ -10,7 +10,6 @@ namespace SubredditMonitorExercise.Storage;
 public class PostFeed : IPostFeed
 {
     private readonly ILogger _logger;
-    private readonly int _warningThreshold;
     private readonly Queue<string> _postQueue = new();
     private readonly Dictionary<string, ISocialMediaPost> _posts = new();
 
@@ -19,14 +18,14 @@ public class PostFeed : IPostFeed
     public PostFeed(ILogger<PostFeed> logger, IConfiguration configuration)
     {
         _logger = logger;
-        _warningThreshold = configuration.GetValue("PostFeed:WarningThreshold", 10);
     }
 
-    public void EnqueuePost(ISocialMediaPost post)
+    public int EnqueuePost(ISocialMediaPost post)
     {
         var count = 0;
         lock (_lock)
         {
+            count = _postQueue.Count;
             if (_posts.ContainsKey(post.Id))
             {
                 // Check if the incoming post is newer than the one we have
@@ -37,19 +36,19 @@ public class PostFeed : IPostFeed
                         post.Url, post.Score);
                 }
 
-                return;
+                return count;
             }
 
             _posts.Add(post.Id, post);
             _postQueue.Enqueue(post.Id);
-            count = _postQueue.Count;
+            count++;
         }
 
         _logger.LogTrace(
             "Enqueued post {PostId} from {PostAuthor} with title {PostTitle} ({PostUrl}) with score {PostScore} at {PostCreated}",
             post.Id, post.Author, post.Title, post.Url, post.Score, post.Created);
 
-        if (count >= _warningThreshold) _logger.LogWarning("Post queue has reached {PostCount} posts", count);
+        return count;
     }
 
     public ISocialMediaPost? DequeuePost()
@@ -70,6 +69,17 @@ public class PostFeed : IPostFeed
         lock (_lock)
         {
             return _postQueue.Count <= 0;
+        }
+    }
+
+    public int Count
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _postQueue.Count;
+            }
         }
     }
 }

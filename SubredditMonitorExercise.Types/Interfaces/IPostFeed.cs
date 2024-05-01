@@ -2,7 +2,8 @@
 
 public interface IPostFeed
 {
-    void EnqueuePost(ISocialMediaPost post);
+    int EnqueuePost(ISocialMediaPost post);
     ISocialMediaPost? DequeuePost();
     bool IsEmpty();
+    int Count { get; }
 }
