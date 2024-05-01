@@ -30,8 +30,6 @@ public sealed class PostConsumer : BackgroundService
             var post = _postFeed.DequeuePost()!;
             ProcessPost(post);
         }
-
-        await Task.CompletedTask;
     }
 
     private void ProcessPost(ISocialMediaPost post)
