@@ -44,10 +44,9 @@ public sealed class ApiScheduler : BackgroundService
         }
         else if (api.CallsPerFetch > 0)
         {
-            // Ceiling here to err on the side of caution and not hit the rate limit
-            var intervalSeconds =
-                (int)Math.Ceiling(api.RateLimitReset / (api.RateLimitRemaining / (float)api.CallsPerFetch));
-            interval = TimeSpan.FromSeconds(intervalSeconds);
+            var intervalMs = Math.Ceiling(10 * (api.RateLimitReset /
+                                                     (api.RateLimitRemaining / (float)api.CallsPerFetch))) * 100;
+            interval = TimeSpan.FromMilliseconds(intervalMs);
         }
 
         if (interval < _minimumInterval) interval = _minimumInterval;
@@ -95,7 +94,7 @@ public sealed class ApiScheduler : BackgroundService
                     if (postFeedCount >= _warningThreshold) _logger.LogWarning("Post queue has reached {PostFeedCount} posts", postFeedCount);
 
                     var interval = CalculateIntervalForApi(socialMediaApi);
-                    _logger.LogDebug("Calculated interval for API {Id} as {Interval}", id, interval);
+                    _logger.LogDebug("Calculated interval for API {Id} as {Interval}ms", id, interval.TotalMilliseconds);
                     _apiQueue.Enqueue(id, DateTimeOffset.UtcNow + interval);
                 }, stoppingToken);
         }
