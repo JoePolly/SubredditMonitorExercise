@@ -23,7 +23,7 @@ public sealed class PostConsumer : BackgroundService
         {
             if (_postFeed.IsEmpty())
             {
-                await Task.Delay(1000, stoppingToken);
+                await Task.Delay(500, stoppingToken);
                 continue;
             }
 
