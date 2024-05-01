@@ -11,6 +11,7 @@ public sealed class ApiScheduler : BackgroundService
     private readonly ILogger _logger;
     private readonly Dictionary<string, ISocialMediaApi> _apis = new();
     private readonly PriorityQueue<string, DateTimeOffset> _apiQueue = new();
+    private readonly int _warningThreshold;
 
     public ApiScheduler(IPostFeed postFeed, IConfiguration configuration, IEnumerable<ISocialMediaApi> apis,
         ILogger<ApiScheduler> logger)
@@ -20,7 +21,9 @@ public sealed class ApiScheduler : BackgroundService
 
         foreach (var api in apis) RegisterApi(api);
 
-        _minimumInterval = TimeSpan.FromMilliseconds(Math.Max(configuration.GetValue("ApiScheduler:MinimumIntervalMs", 500), 100));
+        _minimumInterval =
+            TimeSpan.FromMilliseconds(Math.Max(configuration.GetValue("ApiScheduler:MinimumIntervalMs", 500), 100));
+        _warningThreshold = configuration.GetValue("ApiScheduler:FeedWarningThreshold", 100);
     }
 
     private IPostFeed PostFeed { get; }
@@ -30,7 +33,7 @@ public sealed class ApiScheduler : BackgroundService
         _apis.Add(api.Id, api);
         _apiQueue.Enqueue(api.Id, DateTimeOffset.UtcNow);
     }
-    
+
     private TimeSpan CalculateIntervalForApi(ISocialMediaApi api)
     {
         var interval = TimeSpan.Zero;
@@ -71,13 +74,27 @@ public sealed class ApiScheduler : BackgroundService
             var id = _apiQueue.Dequeue();
 
             _logger.LogInformation("Fetching posts from API {Id}", id);
-            _ = _apis[id]
-                .GetNextPostsAsync(stoppingToken)
+            var socialMediaApi = _apis[id];
+
+            var tasks = new[]
+            {
+                socialMediaApi.GetSpecificPostsAsync(socialMediaApi.GetTrackedPostIds(), stoppingToken),
+                socialMediaApi.GetNextPostsAsync(stoppingToken)
+            };
+
+            _ = Task.WhenAll(tasks)
                 .ContinueWith(posts =>
                 {
-                    foreach (var post in posts.Result) PostFeed.EnqueuePost(post);
+                    foreach (var post in posts.Result.SelectMany(p => p))
+                    {
+                        PostFeed.EnqueuePost(post);
+                        socialMediaApi.TrackPostId(post.Id);
+                    }
 
-                    var interval = CalculateIntervalForApi(_apis[id]);
+                    var postFeedCount = PostFeed.Count;
+                    if (postFeedCount >= _warningThreshold) _logger.LogWarning("Post queue has reached {PostFeedCount} posts", postFeedCount);
+
+                    var interval = CalculateIntervalForApi(socialMediaApi);
                     _logger.LogDebug("Calculated interval for API {Id} as {Interval}", id, interval);
                     _apiQueue.Enqueue(id, DateTimeOffset.UtcNow + interval);
                 }, stoppingToken);
