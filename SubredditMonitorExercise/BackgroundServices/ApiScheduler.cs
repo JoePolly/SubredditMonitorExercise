@@ -44,8 +44,8 @@ public sealed class ApiScheduler : BackgroundService
         }
         else if (api.CallsPerFetch > 0)
         {
-            var intervalMs = Math.Ceiling(10 * (api.RateLimitReset /
-                                                     (api.RateLimitRemaining / (float)api.CallsPerFetch))) * 100;
+            var intervalMs = Math.Ceiling(100 * (api.RateLimitReset /
+                                                     (api.RateLimitRemaining / (float)api.CallsPerFetch))) * 10;
             interval = TimeSpan.FromMilliseconds(intervalMs);
         }
 
