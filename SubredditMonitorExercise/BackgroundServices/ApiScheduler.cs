@@ -20,6 +20,8 @@ public sealed class ApiScheduler : BackgroundService
         PostFeed = postFeed;
 
         foreach (var api in apis) RegisterApi(api);
+        
+        if(_apis.Count == 0) _logger.LogCritical("No APIs were registered for scheduling. Check your config.json and relaunch the application");
 
         _minimumInterval =
             TimeSpan.FromMilliseconds(Math.Max(configuration.GetValue("ApiScheduler:MinimumIntervalMs", 500), 100));
