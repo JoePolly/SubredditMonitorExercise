@@ -20,7 +20,7 @@ public sealed class ApiScheduler : BackgroundService
 
         foreach (var api in apis) RegisterApi(api);
 
-        _minimumInterval = TimeSpan.FromMilliseconds(configuration.GetValue("ApiScheduler:MinimumIntervalMs", 500));
+        _minimumInterval = TimeSpan.FromMilliseconds(Math.Max(configuration.GetValue("ApiScheduler:MinimumIntervalMs", 500), 100));
     }
 
     private IPostFeed PostFeed { get; }
@@ -40,7 +40,7 @@ public sealed class ApiScheduler : BackgroundService
 
     private TimeSpan CalculateIntervalForApi(ISocialMediaApi api)
     {
-        var interval = TimeSpan.FromSeconds(1);
+        var interval = TimeSpan.Zero;
 
         if (api.RateLimitRemaining == 0)
         {
