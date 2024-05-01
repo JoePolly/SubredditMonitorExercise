@@ -82,11 +82,14 @@ public sealed class RedditClient : IDisposable, ISocialMediaApi
     public async Task<IEnumerable<ISocialMediaPost>> GetSpecificPostsAsync(IEnumerable<string> ids,
         CancellationToken stoppingToken = default)
     {
-        var batches = ids.Batch(_postsPerSpecificRequest);
+        var batches = ids.Batch(_postsPerSpecificRequest).ToArray();
+        _logger.LogInformation("Getting tracked posts in {BatchCount} batches", batches.Count());
 
         var tasks = batches.Select(batch => GetSpecificPostsBatch(batch, stoppingToken));
+        if (stoppingToken.IsCancellationRequested) return Array.Empty<ISocialMediaPost>();
 
         var posts = (await Task.WhenAll(tasks)).SelectMany(p => p);
+        if (stoppingToken.IsCancellationRequested) return Array.Empty<ISocialMediaPost>();
 
         return posts;
     }
@@ -104,6 +107,8 @@ public sealed class RedditClient : IDisposable, ISocialMediaApi
     private async Task<Post[]> GetSpecificPostsBatch(IEnumerable<string> ids, CancellationToken stoppingToken)
     {
         var response = await FetchPostsByIds(ids, stoppingToken);
+        
+        if (stoppingToken.IsCancellationRequested) return Array.Empty<Post>();
 
         if (!response.IsSuccessful || response.Data == null)
         {
@@ -122,7 +127,7 @@ public sealed class RedditClient : IDisposable, ISocialMediaApi
 
             if (dateHeader != null) date = DateTimeOffset.Parse(dateHeader.ToString()!);
 
-            _logger.LogDebug("Response received at {Date}", date);
+            _logger.LogTrace("Response received at {Date}", date);
             foreach (var post in posts) post.FetchTime = date;
         }
 
@@ -132,6 +137,7 @@ public sealed class RedditClient : IDisposable, ISocialMediaApi
     public async Task<IEnumerable<ISocialMediaPost>> GetNextPostsAsync(CancellationToken stoppingToken = default)
     {
         var tasks = _subreddits.Keys.Select(subreddit => GetNextSubredditPosts(subreddit, stoppingToken)).ToArray();
+        if (stoppingToken.IsCancellationRequested) return Array.Empty<ISocialMediaPost>();
 
         var posts = await Task.WhenAll(tasks);
 
@@ -170,6 +176,7 @@ public sealed class RedditClient : IDisposable, ISocialMediaApi
         _logger.LogInformation("Getting subreddit posts for r/{Subreddit}", subreddit);
 
         var response = await FetchNewPostsForSubreddit(subreddit, tracker.Before, tracker.Count, stoppingToken);
+        if (stoppingToken.IsCancellationRequested) return Array.Empty<Post>();
 
         if (!response.IsSuccessful || response.Data == null)
         {
@@ -200,7 +207,7 @@ public sealed class RedditClient : IDisposable, ISocialMediaApi
 
             if (dateHeader != null) date = DateTimeOffset.Parse(dateHeader.ToString()!);
 
-            _logger.LogDebug("Response received at {Date}", date);
+            _logger.LogTrace("Response received at {Date}", date);
             foreach (var post in posts) post.FetchTime = date;
         }
 
