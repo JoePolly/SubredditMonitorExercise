@@ -15,7 +15,7 @@ public class PostFeed : IPostFeed
 
     private readonly object _lock = new();
 
-    public PostFeed(ILogger<PostFeed> logger, IConfiguration configuration)
+    public PostFeed(ILogger<PostFeed> logger)
     {
         _logger = logger;
     }
