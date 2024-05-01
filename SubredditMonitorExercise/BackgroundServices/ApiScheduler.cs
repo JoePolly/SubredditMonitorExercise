@@ -30,14 +30,7 @@ public sealed class ApiScheduler : BackgroundService
         _apis.Add(api.Id, api);
         _apiQueue.Enqueue(api.Id, DateTimeOffset.UtcNow);
     }
-
-    private async Task<IEnumerable<ISocialMediaPost>> GetNextPostsAsync()
-    {
-        var tasks = _apis.Values.Select(api => api.GetNextPostsAsync());
-        var posts = await Task.WhenAll(tasks);
-        return posts.SelectMany(p => p);
-    }
-
+    
     private TimeSpan CalculateIntervalForApi(ISocialMediaApi api)
     {
         var interval = TimeSpan.Zero;
