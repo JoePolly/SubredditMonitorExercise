@@ -36,8 +36,6 @@ public sealed class StatisticsWriter : BackgroundService
             if (postCountsByUser.Count == 0)
             {
                 // No posts have been saved yet.
-                
-                await Task.Delay(_writeInterval, stoppingToken);
                 await JsonSerializer.SerializeAsync(writer.BaseStream, new
                     {
                         TotalPosts = 0,
