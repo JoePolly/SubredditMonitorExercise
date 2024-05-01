@@ -16,6 +16,7 @@
     "WarningThreshold": 10
   },
   "StatisticsWriter": {
+    "Enabled": true,
     "Filename": "statistics.json",
     "IntervalMs": 5000
   },
